@@ -16,6 +16,8 @@ func SetupRouter() *gin.Engine {
 	dbConnection := mysql.NewDBConnection()
 	productRepo := repository.NewProduct(dbConnection)
 	productUseCase := usecase.NewProduct(productRepo)
+	orderRepo := repository.NewOrder(dbConnection)
+	ordersUseCase := usecase.NewOrder(orderRepo, productRepo)
 
 	urlBase := os.Getenv("URL_BASE")
 	if urlBase == "" {
@@ -24,8 +26,11 @@ func SetupRouter() *gin.Engine {
 
 	api := router.Group(urlBase)
 	{
-		handler := handlers.NewProductHandler(productUseCase)
-		api.GET("/products", handler.GetProducts)
+		handlerProduct := handlers.NewProductHandler(productUseCase)
+		handlerOrder := handlers.NewOrderHandler(ordersUseCase)
+		api.GET("/products", handlerProduct.GetProducts)
+		api.PUT("/products/:id/stock", handlerProduct.UpdateProductStock)
+		api.POST("/orders", handlerOrder.CreateOrder)
 	}
 
 	return router
