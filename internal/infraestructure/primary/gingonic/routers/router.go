@@ -6,6 +6,7 @@ import (
 	"velocity-technical-test/internal/infraestructure/primary/gingonic/handlers"
 	"velocity-technical-test/internal/infraestructure/secundary/mysql"
 	"velocity-technical-test/internal/infraestructure/secundary/mysql/repository"
+	"velocity-technical-test/internal/infraestructure/secundary/redis"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +18,9 @@ func SetupRouter() *gin.Engine {
 	productRepo := repository.NewProduct(dbConnection)
 	productUseCase := usecase.NewProduct(productRepo)
 	orderRepo := repository.NewOrder(dbConnection)
-	ordersUseCase := usecase.NewOrder(orderRepo, productRepo)
+	redisClient := redis.NewRedisClient()
+	redisService := redis.NewRedisService(redisClient)
+	ordersUseCase := usecase.NewOrder(orderRepo, productRepo, redisService)
 
 	urlBase := os.Getenv("URL_BASE")
 	if urlBase == "" {
@@ -31,6 +34,7 @@ func SetupRouter() *gin.Engine {
 		api.GET("/products", handlerProduct.GetProducts)
 		api.PUT("/products/:id/stock", handlerProduct.UpdateProductStock)
 		api.POST("/orders", handlerOrder.CreateOrder)
+		api.GET("/orders/:id", handlerOrder.GetOrderWithItems)
 	}
 
 	return router

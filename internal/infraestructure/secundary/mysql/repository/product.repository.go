@@ -42,7 +42,7 @@ func (r *Product) GetProducts() ([]dtos.ProductDTO, error) {
 
 func (r *Product) UpdateProductStock(productID uint, newStock uint) error {
 	db := r.dbConnection.GetDB()
-	err := db.Model(&models.Product{}).Where("id = ?", productID).Update("stock", newStock).Error
+	err := db.Debug().Model(&models.Product{}).Where("id = ?", productID).Update("stock", newStock).Error
 	if err != nil {
 		return err
 	}
@@ -67,4 +67,24 @@ func (r *Product) CountProductStock(productID uint) (uint, error) {
 		return 0, err
 	}
 	return stock, nil
+}
+
+func (r *Product) GetProductName(productID uint) (string, error) {
+	var productName string
+	db := r.dbConnection.GetDB()
+	err := db.Model(&models.Product{}).Where("id = ?", productID).Pluck("name", &productName).Error
+	if err != nil {
+		return "", err
+	}
+	return productName, nil
+}
+
+func (r *Product) GetProductPrice(productID uint) (float64, error) {
+	var price float64
+	db := r.dbConnection.GetDB()
+	err := db.Model(&models.Product{}).Where("id = ?", productID).Pluck("price", &price).Error
+	if err != nil {
+		return 0, err
+	}
+	return price, nil
 }

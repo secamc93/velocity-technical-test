@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   mysql:
@@ -17,6 +16,23 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+      - "8001:8001"
+    networks:
+      - mynetwork
+
+  cam_service:
+    image: cam1993/cam:velocity
+    environment:
+      MYSQL_DB_HOST: mysql
+      MYSQL_DB_PORT: 3306
+      MYSQL_DB_NAME: order_management
+      MYSQL_DB_USER: mysql
+      MYSQL_DB_PASSWORD: mysql
+      SERVER_PORT: 60000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "60000:60000"
     networks:
       - mynetwork
 

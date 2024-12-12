@@ -3,29 +3,12 @@ package mappers
 import (
 	"velocity-technical-test/internal/domain/orders/dtos"
 	"velocity-technical-test/internal/infraestructure/secundary/mysql/models"
-
-	"gorm.io/gorm"
 )
 
 func ToOrderDTO(order models.Order) dtos.OrderDTO {
 	return dtos.OrderDTO{
-		ID:           order.ID,
 		CustomerName: order.CustomerName,
 		TotalAmount:  order.TotalAmount,
-		CreatedAt:    order.CreatedAt,
-		UpdatedAt:    order.UpdatedAt,
-	}
-}
-
-func ToOrderModel(orderDTO dtos.OrderDTO) models.Order {
-	return models.Order{
-		Model: gorm.Model{
-			ID:        orderDTO.ID,
-			CreatedAt: orderDTO.CreatedAt,
-			UpdatedAt: orderDTO.UpdatedAt,
-		},
-		CustomerName: orderDTO.CustomerName,
-		TotalAmount:  orderDTO.TotalAmount,
 	}
 }
 
@@ -37,10 +20,33 @@ func ToOrderDTOList(orders []models.Order) []dtos.OrderDTO {
 	return orderDTOs
 }
 
-func ToOrderModelList(orderDTOs []dtos.OrderDTO) []models.Order {
-	orders := make([]models.Order, len(orderDTOs))
-	for i, orderDTO := range orderDTOs {
-		orders[i] = ToOrderModel(orderDTO)
+func MapOrderItemDTOToModel(orderItemDTO dtos.OrderItemDTO) models.OrderItem {
+	return models.OrderItem{
+		OrderID:   orderItemDTO.OrderID,
+		ProductID: orderItemDTO.ProductID,
+		Quantity:  orderItemDTO.Quantity,
+		Subtotal:  orderItemDTO.Subtotal,
 	}
-	return orders
+}
+
+func MapOrderModelToDTO(order models.Order) dtos.OrderDTO {
+	return dtos.OrderDTO{
+		CustomerName: order.CustomerName,
+		TotalAmount:  order.TotalAmount,
+		Items:        MapOrderItemsModelToDTO(order.OrderItems),
+	}
+}
+
+func MapOrderItemsModelToDTO(orderItems []models.OrderItem) []dtos.OrderItemDTO {
+	orderItemsDTO := make([]dtos.OrderItemDTO, len(orderItems))
+	for i, item := range orderItems {
+		orderItemsDTO[i] = dtos.OrderItemDTO{
+			OrderID:   item.OrderID,
+			ProductID: item.ProductID,
+			Product:   item.Product.Name,
+			Quantity:  item.Quantity,
+			Subtotal:  item.Subtotal,
+		}
+	}
+	return orderItemsDTO
 }

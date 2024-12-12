@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"velocity-technical-test/internal/domain/products/dtos"
-	"velocity-technical-test/internal/domain/products/errors"
+	producterrors "velocity-technical-test/internal/domain/products/errors"
 	"velocity-technical-test/internal/domain/products/ports"
 	"velocity-technical-test/pkg/logger"
 )
@@ -31,8 +31,8 @@ func (p *Product) GetProducts() ([]dtos.ProductDTO, error) {
 func (p *Product) UpdateProductStock(productID uint, newStock uint) error {
 	existProduct, err := p.repo.ProductExists(productID)
 	if err != nil || !existProduct {
-		p.logger.Error(errors.ErrInvalidProduct.Error())
-		return errors.ErrInvalidProduct
+		p.logger.Error(producterrors.ErrInvalidProduct.Error())
+		return producterrors.ErrInvalidProduct
 	}
 
 	return p.repo.UpdateProductStock(productID, newStock)
