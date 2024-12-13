@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 	"velocity-technical-test/internal/domain/orders/dtos"
 	"velocity-technical-test/pkg/env"
 	"velocity-technical-test/pkg/logger"
@@ -11,25 +13,32 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-var ctx = context.Background()
+var (
+	ctx         = context.Background()
+	redisClient *redis.Client
+	redisOnce   sync.Once
+)
 
 func NewRedisClient() *redis.Client {
-	log := logger.NewLogger()
-	env := env.LoadEnv()
+	redisOnce.Do(func() {
+		log := logger.NewLogger()
+		env := env.LoadEnv()
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", env.RedisHost, env.RedisPort),
-		Password: "",
-		DB:       0,
+		redisClient = redis.NewClient(&redis.Options{
+			Addr:     fmt.Sprintf("%s:%s", env.RedisHost, env.RedisPort),
+			Password: "",
+			DB:       0,
+		})
+
+		_, err := redisClient.Ping(ctx).Result()
+		if err != nil {
+			log.Fatal("Failed to connect to Redis: %v", err)
+		}
+
+		log.Success("Connected to Redis at %s:%s", env.RedisHost, env.RedisPort)
 	})
 
-	_, err := rdb.Ping(ctx).Result()
-	if err != nil {
-		log.Fatal("Failed to connect to Redis: %v", err)
-	}
-
-	log.Success("Connected to Redis at %s:%s", env.RedisHost, env.RedisPort)
-	return rdb
+	return redisClient
 }
 
 type RedisService struct {
@@ -56,7 +65,8 @@ func (s *RedisService) SetJSON(key string, status string, value interface{}) err
 		return fmt.Errorf("failed to marshal JSON: %v", err)
 	}
 
-	err = s.rdb.Set(ctx, key, data, 0).Err()
+	// Establecer el tiempo de vida a 24 horas (24 * 60 * 60 segundos)
+	err = s.rdb.Set(ctx, key, data, 24*time.Hour).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set JSON in Redis: %v", err)
 	}
