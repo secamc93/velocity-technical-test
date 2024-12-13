@@ -8,7 +8,11 @@ import (
 	"velocity-technical-test/internal/infraestructure/secundary/mysql/repository"
 	"velocity-technical-test/internal/infraestructure/secundary/redis"
 
+	_ "velocity-technical-test/docs"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRouter() *gin.Engine {
@@ -36,6 +40,8 @@ func SetupRouter() *gin.Engine {
 		api.POST("/orders", handlerOrder.CreateOrder)
 		api.GET("/orders/:id", handlerOrder.GetOrderWithItems)
 	}
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
 }

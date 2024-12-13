@@ -82,7 +82,7 @@ func (o *Order) checkIndempotenciaKey(indempotenciaKey string) error {
 			return err
 		}
 		if status == "IN_PROGRESS" {
-			err = fmt.Errorf("la clave de indempotencia ya existe con estado: %s", status)
+			err = fmt.Errorf("409 Conflict: la clave de indempotencia ya existe con estado: %s", status)
 			o.logger.Error(err.Error())
 			return err
 		}

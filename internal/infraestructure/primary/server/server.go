@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	_ "velocity-technical-test/docs"
 	"velocity-technical-test/internal/infraestructure/primary/gingonic/routers"
 	"velocity-technical-test/internal/infraestructure/secundary/mysql"
 	"velocity-technical-test/internal/infraestructure/secundary/mysql/migrate"

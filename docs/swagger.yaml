@@ -1,0 +1,168 @@
+basePath: /api
+definitions:
+  request.OrderItemRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      subtotal:
+        type: number
+    type: object
+  request.OrderRequest:
+    properties:
+      created_at:
+        type: string
+      customer_name:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/request.OrderItemRequest'
+        type: array
+      total_amount:
+        type: number
+      update_at:
+        type: string
+    type: object
+  request.StockRequest:
+    properties:
+      new_stock:
+        type: integer
+    type: object
+  response.BaseResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      statusCode:
+        type: integer
+    type: object
+host: localhost:60000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for a technical test.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Velocity Technical Test API
+  version: "1.0"
+paths:
+  /orders:
+    post:
+      consumes:
+      - application/json
+      description: Create a new order with the provided details
+      parameters:
+      - description: Idempotency Key
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      - description: Order Request
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/request.OrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      summary: Create a new order
+      tags:
+      - orders
+  /orders/{id}:
+    get:
+      description: Get order details along with its items
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      summary: Get order with items
+      tags:
+      - orders
+  /products:
+    get:
+      description: Retrieve a list of all products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      summary: Get all products
+      tags:
+      - products
+  /products/{id}/stock:
+    put:
+      consumes:
+      - application/json
+      description: Update the stock of a specific product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Stock Request
+        in: body
+        name: stock
+        required: true
+        schema:
+          $ref: '#/definitions/request.StockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      summary: Update product stock
+      tags:
+      - products
+swagger: "2.0"

@@ -21,6 +21,14 @@ func NewProductHandler(productUsecase usecase.IProductUsecase) *ProductHandler {
 	}
 }
 
+// GetProducts godoc
+// @Summary Get all products
+// @Description Retrieve a list of all products
+// @Tags products
+// @Produce json
+// @Success 200 {object} response.BaseResponse
+// @Failure 500 {object} response.BaseResponse
+// @Router /products [get]
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	products, err := h.ProductUsecase.GetProducts()
 	if err != nil {
@@ -35,6 +43,18 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	})
 }
 
+// UpdateProductStock godoc
+// @Summary Update product stock
+// @Description Update the stock of a specific product
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param id path int true "Product ID"
+// @Param stock body request.StockRequest true "Stock Request"
+// @Success 200 {object} response.BaseResponse
+// @Failure 400 {object} response.BaseResponse
+// @Failure 500 {object} response.BaseResponse
+// @Router /products/{id}/stock [put]
 func (h *ProductHandler) UpdateProductStock(c *gin.Context) {
 	request := request.StockRequest{}
 
