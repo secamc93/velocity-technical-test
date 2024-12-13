@@ -50,3 +50,14 @@ export DB_PASSWORD=secret
 export DB_NAME=mydatabase
 export REDIS_HOST=localhost:6379
 export SERVER_PORT=60000
+
+## Swagger - Documentación de la API
+Una vez la aplicación esté corriendo (ya sea vía Docker Compose o localmente), puedes acceder a la documentación de la API en:
+
+http://localhost:60000/swagger/index.html#/
+
+Aquí encontrarás:
+
+Una lista completa de endpoints.
+Parámetros de entrada y salida.
+Ejemplos de peticiones y respuestas.
