@@ -111,33 +111,54 @@ func (s *RedisService) GetOrderStatus(key string) (string, error) {
 }
 
 func (s *RedisService) UpdateOrderStatus(key string, newStatus string) error {
-	var order dtos.Order
+	// Iniciar una transacción
+	txf := func(tx *redis.Tx) error {
+		var order dtos.Order
 
-	data, err := s.rdb.Get(ctx, key).Result()
-	if err == redis.Nil {
-		return fmt.Errorf("key does not exist")
-	} else if err != nil {
-		return fmt.Errorf("failed to get JSON from Redis: %v", err)
+		// Obtener el valor actual
+		data, err := tx.Get(ctx, key).Result()
+		if err == redis.Nil {
+			return fmt.Errorf("key does not exist")
+		} else if err != nil {
+			return fmt.Errorf("failed to get JSON from Redis: %v", err)
+		}
+
+		err = json.Unmarshal([]byte(data), &order)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal JSON: %v", err)
+		}
+
+		// Actualizar el estado
+		order.Status = newStatus
+
+		updatedData, err := json.Marshal(order)
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %v", err)
+		}
+
+		// Establecer el valor actualizado
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			pipe.Set(ctx, key, updatedData, 0)
+			return nil
+		})
+		return err
 	}
 
-	err = json.Unmarshal([]byte(data), &order)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal JSON: %v", err)
+	// Ejecutar la transacción
+	for retries := 0; retries < 1000; retries++ {
+		err := s.rdb.Watch(ctx, txf, key)
+		if err == nil {
+			// Éxito
+			return nil
+		}
+		if err == redis.TxFailedErr {
+			// Reintentar
+			continue
+		}
+		// Error diferente
+		return err
 	}
-
-	order.Status = newStatus
-
-	updatedData, err := json.Marshal(order)
-	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %v", err)
-	}
-
-	err = s.rdb.Set(ctx, key, updatedData, 0).Err()
-	if err != nil {
-		return fmt.Errorf("failed to update JSON in Redis: %v", err)
-	}
-
-	return nil
+	return fmt.Errorf("failed to update order status after multiple retries")
 }
 
 func (s *RedisService) KeyExists(key string) (bool, error) {

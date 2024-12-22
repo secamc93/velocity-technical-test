@@ -10,6 +10,11 @@ services:
       - "3306:3306"
     networks:
       - mynetwork
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:latest
@@ -18,6 +23,11 @@ services:
       - "8001:8001"
     networks:
       - mynetwork
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   cam_service:
     image: cam1993/cam:velocity
@@ -35,8 +45,10 @@ services:
     networks:
       - mynetwork
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 networks:
   mynetwork:

@@ -31,42 +31,57 @@ func NewOrder(repoOrder ports.IOrderRepository, repoProduct portsProduct.IProduc
 }
 
 func (o *Order) CreateOrder(orderDTO dtos.OrderDTO, indempotenciaKey string) error {
-	// Validar existencia de la indempotenciaKey en Redis
-	if err := o.checkIndempotenciaKey(indempotenciaKey); err != nil {
-		if err.Error() == "Order already completed" {
-			return nil
+	resultChan := make(chan error)
+
+	go func() {
+		defer close(resultChan)
+
+		// Validar existencia de la indempotenciaKey en Redis
+		if err := o.checkIndempotenciaKey(indempotenciaKey); err != nil {
+			if err.Error() == "Order already completed" {
+				resultChan <- nil
+				return
+			}
+			resultChan <- err
+			return
 		}
-		return err
-	}
 
-	// Crear un JSON inicial con estado IN_PROGRESS si no existe
-	if err := o.createInitialOrderInRedis(indempotenciaKey, orderDTO); err != nil {
-		return err
-	}
+		// Crear un JSON inicial con estado IN_PROGRESS si no existe
+		if err := o.createInitialOrderInRedis(indempotenciaKey, orderDTO); err != nil {
+			resultChan <- err
+			return
+		}
 
-	// Validar existencia y stock de productos, y calcular subtotal
-	totalOrderPrice, err := o.validateAndCalculateOrder(orderDTO)
-	if err != nil {
-		return err
-	}
+		// Validar existencia y stock de productos, y calcular subtotal
+		totalOrderPrice, err := o.validateAndCalculateOrder(orderDTO)
+		if err != nil {
+			resultChan <- err
+			return
+		}
 
-	// Modificar el stock de productos después de la validación
-	if err := o.updateProductStock(orderDTO); err != nil {
-		return err
-	}
+		// Modificar el stock de productos después de la validación
+		if err := o.updateProductStock(orderDTO); err != nil {
+			resultChan <- err
+			return
+		}
 
-	// Crear la orden y los items de la orden
-	if err := o.createOrderAndItems(orderDTO, totalOrderPrice); err != nil {
-		return err
-	}
+		// Crear la orden y los items de la orden
+		if err := o.createOrderAndItems(orderDTO, totalOrderPrice); err != nil {
+			resultChan <- err
+			return
+		}
 
-	// Actualizar el JSON en Redis con el status COMPLETED
-	if err := o.redisOrder.SetJSON(indempotenciaKey, "COMPLETED", orderDTO); err != nil {
-		o.logger.Error(err.Error())
-		return err
-	}
+		// Actualizar el JSON en Redis con el status COMPLETED
+		if err := o.redisOrder.SetJSON(indempotenciaKey, "COMPLETED", orderDTO); err != nil {
+			o.logger.Error(err.Error())
+			resultChan <- err
+			return
+		}
 
-	return nil
+		resultChan <- nil
+	}()
+
+	return <-resultChan
 }
 
 func (o *Order) checkIndempotenciaKey(indempotenciaKey string) error {
